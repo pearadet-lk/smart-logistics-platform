@@ -1,0 +1,13 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["src/Gateway/SmartLogistics.Gateway/SmartLogistics.Gateway.csproj", "Gateway/SmartLogistics.Gateway/"]
+RUN dotnet restore "Gateway/SmartLogistics.Gateway/SmartLogistics.Gateway.csproj"
+COPY src/Gateway/SmartLogistics.Gateway/ Gateway/SmartLogistics.Gateway/
+WORKDIR /src/Gateway/SmartLogistics.Gateway
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "SmartLogistics.Gateway.dll"]

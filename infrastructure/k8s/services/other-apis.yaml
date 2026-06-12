@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tariff-api
+  namespace: dev
+  labels:
+    app: tariff-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tariff-api
+  template:
+    metadata:
+      labels:
+        app: tariff-api
+    spec:
+      containers:
+        - name: tariff-api
+          image: ghcr.io/OWNER/smart-logistics-tariff-api:latest
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-api
+  namespace: dev
+  labels:
+    app: billing-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-api
+  template:
+    metadata:
+      labels:
+        app: billing-api
+    spec:
+      containers:
+        - name: billing-api
+          image: ghcr.io/OWNER/smart-logistics-billing-api:latest
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-api
+  namespace: dev
+  labels:
+    app: notification-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-api
+  template:
+    metadata:
+      labels:
+        app: notification-api
+    spec:
+      containers:
+        - name: notification-api
+          image: ghcr.io/OWNER/smart-logistics-notification-api:latest
+          ports:
+            - containerPort: 8080

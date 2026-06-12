@@ -1,0 +1,52 @@
+# PLACEHOLDER — deploy to AKS/EKS. Replace image tags and secrets with Key Vault / Secrets Manager refs.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: dev
+  labels:
+    app: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: ghcr.io/OWNER/smart-logistics-gateway:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: Keycloak__Authority
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-config
+                  key: authority
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: dev
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

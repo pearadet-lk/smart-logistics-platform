@@ -1,0 +1,6 @@
+@SmartLogistics.Shipment.Api_HostAddress = http://localhost:5056
+
+GET {{SmartLogistics.Shipment.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

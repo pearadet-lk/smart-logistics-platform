@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipment-api
+  namespace: dev
+  labels:
+    app: shipment-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipment-api
+  template:
+    metadata:
+      labels:
+        app: shipment-api
+    spec:
+      containers:
+        - name: shipment-api
+          image: ghcr.io/OWNER/smart-logistics-shipment-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: shipment-db-secret
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipment-api
+  namespace: dev
+spec:
+  selector:
+    app: shipment-api
+  ports:
+    - port: 80
+      targetPort: 8080

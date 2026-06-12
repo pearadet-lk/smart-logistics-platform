@@ -1,0 +1,135 @@
+{
+  "realm": "SmartLogistics",
+  "enabled": true,
+  "displayName": "Smart Logistics Platform",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "_comment": "PLACEHOLDER — import via Keycloak Admin or docker compose. Configure clients, roles, groups, and mappers in Admin Console.",
+  "roles": {
+    "realm": [
+      { "name": "Admin", "description": "Internal staff — full platform access" },
+      { "name": "Operations", "description": "Internal staff — shipment operations" },
+      { "name": "Finance", "description": "Internal staff — billing and invoices" },
+      { "name": "Sales", "description": "Internal staff — sales and tariffs" },
+      { "name": "Partner", "description": "External partner access" },
+      { "name": "Customer", "description": "External customer (e.g. DHL, FedEx, UPS)" },
+      { "name": "Carrier", "description": "External carrier (e.g. Maersk, ONE)" }
+    ],
+    "client": {
+      "shipment-api": {
+        "client": [
+          { "name": "Shipment.Read", "description": "Read shipments" },
+          { "name": "Shipment.Write", "description": "Create/update shipments" },
+          { "name": "Shipment.Delete", "description": "Delete shipments" }
+        ]
+      },
+      "billing-api": {
+        "client": [
+          { "name": "Invoice.Read", "description": "Read invoices" },
+          { "name": "Invoice.Write", "description": "Create/update invoices" }
+        ]
+      }
+    }
+  },
+  "groups": [
+    {
+      "name": "Customers",
+      "subGroups": [
+        { "name": "DHL", "attributes": { "partnerId": ["1001"], "company": ["DHL"] } },
+        { "name": "FedEx", "attributes": { "partnerId": ["1002"], "company": ["FedEx"] } },
+        { "name": "UPS", "attributes": { "partnerId": ["1003"], "company": ["UPS"] } }
+      ]
+    },
+    {
+      "name": "Carriers",
+      "subGroups": [
+        { "name": "Maersk", "attributes": { "partnerId": ["2001"], "company": ["Maersk"] } },
+        { "name": "ONE", "attributes": { "partnerId": ["2002"], "company": ["ONE"] } }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "smartlogistics-web",
+      "name": "Smart Logistics Web (Angular)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "_comment": "Authorization Code Flow + PKCE — never Implicit Flow"
+    },
+    {
+      "clientId": "shipment-api",
+      "name": "Shipment API",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "tariff-api",
+      "name": "Tariff API",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "billing-api",
+      "name": "Billing API",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "notification-api",
+      "name": "Notification API",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "integration-client",
+      "name": "Integration Client (M2M)",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "_comment": "Client Credentials flow for service-to-service authentication"
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "smartlogistics-claims",
+      "description": "Custom claims: company, partnerId, roles",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      },
+      "_comment_mappers": "Add protocol mappers for: company, partnerId (from group attributes), roles"
+    }
+  ],
+  "_example_jwt": {
+    "sub": "123",
+    "preferred_username": "john",
+    "company": "DHL",
+    "partnerId": "1001",
+    "roles": ["Customer"]
+  }
+}

@@ -1,0 +1,18 @@
+# Build arg: SERVICE_PATH e.g. Services/Shipment/SmartLogistics.Shipment.Api
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG SERVICE_PATH
+WORKDIR /src
+COPY ["src/Shared/SmartLogistics.Shared/SmartLogistics.Shared.csproj", "Shared/SmartLogistics.Shared/"]
+COPY ["src/${SERVICE_PATH}/${SERVICE_NAME}.csproj", "${SERVICE_PATH}/"]
+ARG SERVICE_NAME
+RUN dotnet restore "${SERVICE_PATH}/${SERVICE_NAME}.csproj"
+COPY src/Shared/SmartLogistics.Shared/ Shared/SmartLogistics.Shared/
+COPY "src/${SERVICE_PATH}/" "${SERVICE_PATH}/"
+WORKDIR "/src/${SERVICE_PATH}"
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "${SERVICE_NAME}.dll"]
