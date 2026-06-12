@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: smartlogistics-local
+  labels:
+    app: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: smartlogistics/gateway:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Kubernetes
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+          volumeMounts:
+            - name: config
+              mountPath: /app/appsettings.Kubernetes.json
+              subPath: appsettings.Kubernetes.json
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: gateway-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: smartlogistics-local
+  labels:
+    app: gateway
+spec:
+  selector:
+    app: gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

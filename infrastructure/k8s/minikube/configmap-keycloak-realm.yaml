@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: smartlogistics-local
+data:
+  smartlogistics-realm.json: |
+    {
+      "realm": "SmartLogistics",
+      "enabled": true,
+      "displayName": "Smart Logistics Platform (Minikube)",
+      "sslRequired": "external",
+      "registrationAllowed": false
+    }

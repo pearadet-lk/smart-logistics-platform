@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: smartlogistics-local
+
+resources:
+  - namespace.yaml
+  - secrets.yaml
+  - configmap-postgres-init.yaml
+  - configmap-keycloak-realm.yaml
+  - configmap-gateway.yaml
+  - postgres.yaml
+  - keycloak.yaml
+  - services.yaml
+  - gateway.yaml

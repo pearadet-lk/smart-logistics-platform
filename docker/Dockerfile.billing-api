@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["src/Shared/SmartLogistics.Shared/SmartLogistics.Shared.csproj", "Shared/SmartLogistics.Shared/"]
+COPY ["src/Services/Billing/SmartLogistics.Billing.Api/SmartLogistics.Billing.Api.csproj", "Services/Billing/SmartLogistics.Billing.Api/"]
+RUN dotnet restore "Services/Billing/SmartLogistics.Billing.Api/SmartLogistics.Billing.Api.csproj"
+COPY src/Shared/SmartLogistics.Shared/ Shared/SmartLogistics.Shared/
+COPY src/Services/Billing/SmartLogistics.Billing.Api/ Services/Billing/SmartLogistics.Billing.Api/
+WORKDIR /src/Services/Billing/SmartLogistics.Billing.Api
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "SmartLogistics.Billing.Api.dll"]

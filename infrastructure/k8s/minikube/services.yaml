@@ -1,0 +1,193 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipment-api
+  namespace: smartlogistics-local
+  labels:
+    app: shipment-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipment-api
+  template:
+    metadata:
+      labels:
+        app: shipment-api
+    spec:
+      containers:
+        - name: shipment-api
+          image: smartlogistics/shipment-api:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Docker
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: ConnectionStrings__ShipmentDB
+              value: Host=postgres;Port=5432;Database=ShipmentDB;Username=postgres;Password=postgres
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipment-api
+  namespace: smartlogistics-local
+spec:
+  selector:
+    app: shipment-api
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tariff-api
+  namespace: smartlogistics-local
+  labels:
+    app: tariff-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tariff-api
+  template:
+    metadata:
+      labels:
+        app: tariff-api
+    spec:
+      containers:
+        - name: tariff-api
+          image: smartlogistics/tariff-api:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Docker
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: ConnectionStrings__TariffDB
+              value: Host=postgres;Port=5432;Database=TariffDB;Username=postgres;Password=postgres
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tariff-api
+  namespace: smartlogistics-local
+spec:
+  selector:
+    app: tariff-api
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-api
+  namespace: smartlogistics-local
+  labels:
+    app: billing-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-api
+  template:
+    metadata:
+      labels:
+        app: billing-api
+    spec:
+      containers:
+        - name: billing-api
+          image: smartlogistics/billing-api:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Docker
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: ConnectionStrings__BillingDB
+              value: Host=postgres;Port=5432;Database=BillingDB;Username=postgres;Password=postgres
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-api
+  namespace: smartlogistics-local
+spec:
+  selector:
+    app: billing-api
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-api
+  namespace: smartlogistics-local
+  labels:
+    app: notification-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-api
+  template:
+    metadata:
+      labels:
+        app: notification-api
+    spec:
+      containers:
+        - name: notification-api
+          image: smartlogistics/notification-api:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Docker
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-api
+  namespace: smartlogistics-local
+spec:
+  selector:
+    app: notification-api
+  ports:
+    - port: 80
+      targetPort: 8080

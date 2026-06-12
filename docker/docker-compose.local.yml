@@ -1,0 +1,82 @@
+# Full local stack — infrastructure + all .NET services
+# Run: docker compose -f docker/docker-compose.yml -f docker/docker-compose.local.yml up --build -d
+# Or:  ./scripts/docker-deploy.ps1
+
+services:
+  shipment-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.shipment-api
+    container_name: smartlogistics-shipment-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - smartlogistics
+
+  tariff-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.tariff-api
+    container_name: smartlogistics-tariff-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartlogistics
+
+  billing-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.billing-api
+    container_name: smartlogistics-billing-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - smartlogistics
+
+  notification-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.notification-api
+    container_name: smartlogistics-notification-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+    depends_on:
+      kafka:
+        condition: service_started
+    networks:
+      - smartlogistics
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    container_name: smartlogistics-gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+    ports:
+      - "5000:8080"
+    depends_on:
+      - shipment-api
+      - tariff-api
+      - billing-api
+      - notification-api
+      - keycloak
+    networks:
+      - smartlogistics
+
+networks:
+  smartlogistics:
+    name: smartlogistics

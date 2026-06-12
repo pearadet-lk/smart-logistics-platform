@@ -44,11 +44,12 @@ smart-logistics-platform/
 │   │   ├── Billing/SmartLogistics.Billing.Api/    # BillingDB
 │   │   └── Notification/SmartLogistics.Notification.Api/
 │   └── Shared/SmartLogistics.Shared/              # Audit, events, role constants
-├── web/smartlogistics-web/                        # Angular (placeholder)
+├── web/smartlogistics-web/                        # Angular 22 SPA (Keycloak PKCE TODO)
 ├── docker/                                        # docker-compose, Dockerfiles
+├── scripts/                                       # docker-deploy, minikube-deploy (+ auto port-forward)
 ├── infrastructure/
 │   ├── keycloak/                                  # Realm config (SmartLogistics)
-│   ├── k8s/                                       # AKS/EKS manifests (dev/uat/prod)
+│   ├── k8s/                                       # AKS/EKS + minikube manifests
 │   └── observability/                             # OpenTelemetry → Prometheus → Grafana
 └── .github/workflows/ci-cd.yml
 ```
@@ -90,33 +91,84 @@ Carriers  → Maersk, ONE
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### Start infrastructure
+### Option A — Docker full stack (recommended)
+
+Builds and runs infrastructure + all APIs + gateway in Docker:
+
+```powershell
+./scripts/docker-deploy.ps1
+```
+
+Or manually:
+
+```powershell
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.local.yml up --build -d
+```
+
+| Endpoint | URL |
+|----------|-----|
+| Gateway | http://localhost:5000/health |
+| Keycloak | http://localhost:8080 (admin / admin) |
+| PostgreSQL | localhost:5432 |
+| Kafka | localhost:9092 |
+
+Stop the stack:
+
+```powershell
+./scripts/docker-teardown.ps1
+```
+
+### Option B — Minikube with automatic port-forward
+
+Deploys the full stack to Minikube, builds images into the Minikube Docker daemon, and starts background port-forwards to `localhost`:
+
+```powershell
+./scripts/minikube-deploy.ps1
+```
+
+Port-forwards start automatically (no manual `kubectl port-forward`):
+
+| Service | Local URL |
+|---------|-----------|
+| Gateway | http://localhost:5000 |
+| Keycloak | http://localhost:8080 |
+
+PIDs are saved to `.minikube/port-forwards.json`. Teardown stops port-forwards and removes the namespace:
+
+```powershell
+./scripts/minikube-teardown.ps1
+```
+
+Options:
+
+```powershell
+# Skip image rebuild on redeploy
+./scripts/minikube-deploy.ps1 -SkipBuild
+
+# Custom Minikube resources
+./scripts/minikube-deploy.ps1 -MinikubeCpus 4 -MinikubeMemoryMb 8192
+```
+
+Linux/macOS equivalents: `./scripts/minikube-deploy.sh` and `./scripts/minikube-teardown.sh`.
+
+### Option C — Infrastructure only + dotnet run
+
+Start infrastructure:
 
 ```powershell
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Starts: PostgreSQL, Keycloak (`http://localhost:8080`, admin/admin), Kafka.
-
-### Run services
+Run services locally:
 
 ```powershell
 dotnet build SmartLogistics.sln
 
-# Terminal 1 — Gateway (port 5000)
-dotnet run --project src/Gateway/SmartLogistics.Gateway
-
-# Terminal 2 — Shipment API (5101)
-dotnet run --project src/Services/Shipment/SmartLogistics.Shipment.Api
-
-# Terminal 3 — Tariff API (5102)
-dotnet run --project src/Services/Tariff/SmartLogistics.Tariff.Api
-
-# Terminal 4 — Billing API (5103)
-dotnet run --project src/Services/Billing/SmartLogistics.Billing.Api
-
-# Terminal 5 — Notification API (5104)
-dotnet run --project src/Services/Notification/SmartLogistics.Notification.Api
+dotnet run --project src/Gateway/SmartLogistics.Gateway          # :5000
+dotnet run --project src/Services/Shipment/SmartLogistics.Shipment.Api   # :5101
+dotnet run --project src/Services/Tariff/SmartLogistics.Tariff.Api       # :5102
+dotnet run --project src/Services/Billing/SmartLogistics.Billing.Api    # :5103
+dotnet run --project src/Services/Notification/SmartLogistics.Notification.Api # :5104
 ```
 
 ### Health checks
@@ -125,6 +177,16 @@ dotnet run --project src/Services/Notification/SmartLogistics.Notification.Api
 curl http://localhost:5000/health
 curl http://localhost:5101/health
 ```
+
+### Frontend (Angular 22)
+
+```powershell
+cd web/smartlogistics-web
+npm install
+npm start
+```
+
+Open http://localhost:4200 — placeholder home page with gateway and Keycloak config.
 
 ## Security
 
@@ -152,9 +214,21 @@ Each service includes an `AuditLog` model placeholder for login, CRUD, and chang
 
 ## Kubernetes
 
+### Minikube (local)
+
+Manifests: `infrastructure/k8s/minikube/` — namespace `smartlogistics-local`, local images with `imagePullPolicy: Never`.
+
+```powershell
+kubectl apply -k infrastructure/k8s/minikube
+```
+
+Use `./scripts/minikube-deploy.ps1` for build + deploy + automatic port-forward.
+
+### AKS / EKS (dev / uat / prod)
+
 Namespaces: `dev`, `uat`, `prod`
 
-Manifests under `infrastructure/k8s/` — replace `ghcr.io/OWNER/*` image tags and wire secrets from Key Vault / Secrets Manager before deploying to AKS or EKS.
+Manifests under `infrastructure/k8s/` — replace `ghcr.io/OWNER/*` image tags and wire secrets from Key Vault / Secrets Manager before deploying.
 
 ## CI/CD
 
@@ -164,9 +238,7 @@ GitHub Actions (`.github/workflows/ci-cd.yml`):
 GitHub → GitHub Actions → Docker Build → Container Registry → AKS/EKS
 ```
 
-## Interview talking points
-
-This project demonstrates:
+## This project demonstrates
 
 - OpenID Connect (OIDC) and OAuth2
 - Keycloak — realms, clients, roles, groups, claims

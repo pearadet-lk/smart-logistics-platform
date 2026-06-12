@@ -28,6 +28,7 @@ Thumbs.db
 
 # Docker
 docker/data/
+.minikube/
 
 # Logs
 logs/

@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["src/Shared/SmartLogistics.Shared/SmartLogistics.Shared.csproj", "Shared/SmartLogistics.Shared/"]
+COPY ["src/Services/Tariff/SmartLogistics.Tariff.Api/SmartLogistics.Tariff.Api.csproj", "Services/Tariff/SmartLogistics.Tariff.Api/"]
+RUN dotnet restore "Services/Tariff/SmartLogistics.Tariff.Api/SmartLogistics.Tariff.Api.csproj"
+COPY src/Shared/SmartLogistics.Shared/ Shared/SmartLogistics.Shared/
+COPY src/Services/Tariff/SmartLogistics.Tariff.Api/ Services/Tariff/SmartLogistics.Tariff.Api/
+WORKDIR /src/Services/Tariff/SmartLogistics.Tariff.Api
+RUN dotnet publish -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "SmartLogistics.Tariff.Api.dll"]
