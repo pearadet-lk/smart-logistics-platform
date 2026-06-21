@@ -70,7 +70,7 @@ function Build-LocalImages {
 Set-Location $Root
 New-Item -ItemType Directory -Force -Path $StateDir | Out-Null
 
-Write-Step "Smart Logistics — Minikube deploy"
+Write-Step "Smart Logistics - Minikube deploy"
 
 if (-not (Get-Command minikube -ErrorAction SilentlyContinue)) {
     throw "minikube not found. Install: https://minikube.sigs.k8s.io/docs/start/"

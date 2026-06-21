@@ -5,11 +5,13 @@
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
-  "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
-  "editUsernameAllowed": false,
   "bruteForceProtected": true,
-  "_comment": "PLACEHOLDER — import via Keycloak Admin or docker compose. Configure clients, roles, groups, and mappers in Admin Console.",
+  "browserFlow": "SmartLogistics Browser MFA",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
   "roles": {
     "realm": [
       { "name": "Admin", "description": "Internal staff — full platform access" },
@@ -17,46 +19,80 @@
       { "name": "Finance", "description": "Internal staff — billing and invoices" },
       { "name": "Sales", "description": "Internal staff — sales and tariffs" },
       { "name": "Partner", "description": "External partner access" },
-      { "name": "Customer", "description": "External customer (e.g. DHL, FedEx, UPS)" },
-      { "name": "Carrier", "description": "External carrier (e.g. Maersk, ONE)" }
+      { "name": "Customer", "description": "External customer" },
+      { "name": "Carrier", "description": "External carrier" }
     ],
     "client": {
-      "shipment-api": {
-        "client": [
-          { "name": "Shipment.Read", "description": "Read shipments" },
-          { "name": "Shipment.Write", "description": "Create/update shipments" },
-          { "name": "Shipment.Delete", "description": "Delete shipments" }
-        ]
-      },
-      "billing-api": {
-        "client": [
-          { "name": "Invoice.Read", "description": "Read invoices" },
-          { "name": "Invoice.Write", "description": "Create/update invoices" }
-        ]
-      }
+      "shipment-api": [
+        { "name": "Shipment.Read" },
+        { "name": "Shipment.Create" },
+        { "name": "Shipment.Update" },
+        { "name": "Shipment.Delete" }
+      ],
+      "tariff-api": [
+        { "name": "Tariff.Read" },
+        { "name": "Tariff.Update" },
+        { "name": "Tariff.Approve" }
+      ],
+      "billing-api": [
+        { "name": "Invoice.Read" },
+        { "name": "Invoice.Write" }
+      ]
     }
   },
   "groups": [
     {
       "name": "Customers",
       "subGroups": [
-        { "name": "DHL", "attributes": { "partnerId": ["1001"], "company": ["DHL"] } },
-        { "name": "FedEx", "attributes": { "partnerId": ["1002"], "company": ["FedEx"] } },
-        { "name": "UPS", "attributes": { "partnerId": ["1003"], "company": ["UPS"] } }
+        { "name": "DHL", "attributes": { "partnerId": ["1001"], "company": ["DHL"], "tenant": ["DHL"] } },
+        { "name": "FedEx", "attributes": { "partnerId": ["1002"], "company": ["FedEx"], "tenant": ["FedEx"] } }
       ]
     },
     {
       "name": "Carriers",
       "subGroups": [
-        { "name": "Maersk", "attributes": { "partnerId": ["2001"], "company": ["Maersk"] } },
-        { "name": "ONE", "attributes": { "partnerId": ["2002"], "company": ["ONE"] } }
+        { "name": "Maersk", "attributes": { "partnerId": ["2001"], "company": ["Maersk"], "tenant": ["Maersk"] } }
       ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@smartlogistics.local",
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": ["CONFIGURE_TOTP"],
+      "realmRoles": ["Admin"],
+      "credentials": [{ "type": "password", "value": "admin", "temporary": false }]
+    },
+    {
+      "username": "finance",
+      "email": "finance@smartlogistics.local",
+      "firstName": "Finance",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "requiredActions": ["CONFIGURE_TOTP"],
+      "realmRoles": ["Finance"],
+      "credentials": [{ "type": "password", "value": "finance", "temporary": false }]
+    },
+    {
+      "username": "ops",
+      "email": "ops@smartlogistics.local",
+      "firstName": "Operations",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["Operations"],
+      "credentials": [{ "type": "password", "value": "ops", "temporary": false }]
     }
   ],
   "clients": [
     {
       "clientId": "smartlogistics-web",
-      "name": "Smart Logistics Web (Angular)",
+      "name": "Customer Portal (Angular)",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
@@ -65,71 +101,189 @@
       "protocol": "openid-connect",
       "redirectUris": ["http://localhost:4200/*"],
       "webOrigins": ["http://localhost:4200"],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      },
-      "_comment": "Authorization Code Flow + PKCE — never Implicit Flow"
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    },
+    {
+      "clientId": "admin-web",
+      "name": "Admin Portal (Angular SSO)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    },
+    {
+      "clientId": "partner-web",
+      "name": "Partner Portal (Angular SSO)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
     },
     {
       "clientId": "shipment-api",
-      "name": "Shipment API",
       "enabled": true,
-      "publicClient": false,
       "bearerOnly": true,
       "protocol": "openid-connect"
     },
     {
       "clientId": "tariff-api",
-      "name": "Tariff API",
       "enabled": true,
-      "publicClient": false,
       "bearerOnly": true,
       "protocol": "openid-connect"
     },
     {
       "clientId": "billing-api",
-      "name": "Billing API",
       "enabled": true,
-      "publicClient": false,
       "bearerOnly": true,
       "protocol": "openid-connect"
     },
     {
       "clientId": "notification-api",
-      "name": "Notification API",
       "enabled": true,
-      "publicClient": false,
       "bearerOnly": true,
       "protocol": "openid-connect"
     },
     {
       "clientId": "integration-client",
-      "name": "Integration Client (M2M)",
       "enabled": true,
-      "publicClient": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "protocol": "openid-connect",
-      "_comment": "Client Credentials flow for service-to-service authentication"
+      "protocol": "openid-connect"
     }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": false,
+      "config": { "clientId": "PLACEHOLDER", "clientSecret": "PLACEHOLDER" }
+    },
+    {
+      "alias": "github",
+      "displayName": "GitHub",
+      "providerId": "github",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "linkOnly": false,
+      "config": {
+        "clientId": "PLACEHOLDER_GITHUB_CLIENT_ID",
+        "clientSecret": "PLACEHOLDER_GITHUB_CLIENT_SECRET",
+        "defaultScope": "read:user user:email"
+      }
+    },
+    {
+      "alias": "microsoft",
+      "displayName": "Microsoft",
+      "providerId": "microsoft",
+      "enabled": false,
+      "config": { "clientId": "PLACEHOLDER", "clientSecret": "PLACEHOLDER" }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "SmartLogistics Browser MFA",
+      "description": "Username/password + TOTP (Google/Microsoft Authenticator)",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-spnego",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 25,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 40,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "requiredActions": [
+    { "alias": "CONFIGURE_TOTP", "name": "Configure OTP", "enabled": true, "defaultAction": false, "priority": 10 }
   ],
   "clientScopes": [
     {
-      "name": "smartlogistics-claims",
-      "description": "Custom claims: company, partnerId, roles",
+      "name": "permissions",
       "protocol": "openid-connect",
-      "attributes": {
-        "include.in.token.scope": "true"
-      },
-      "_comment_mappers": "Add protocol mappers for: company, partnerId (from group attributes), roles"
+      "attributes": { "include.in.token.scope": "true" },
+      "protocolMappers": [
+        {
+          "name": "client-roles-permission",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "permission",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "company-claim",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "company",
+            "claim.name": "company",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant-claim",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
-  ],
-  "_example_jwt": {
-    "sub": "123",
-    "preferred_username": "john",
-    "company": "DHL",
-    "partnerId": "1001",
-    "roles": ["Customer"]
-  }
+  ]
 }

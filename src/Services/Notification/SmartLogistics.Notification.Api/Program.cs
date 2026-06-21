@@ -1,11 +1,35 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.AspNetCore.SignalR;
+using SmartLogistics.Notification.Api.Hubs;
+using SmartLogistics.Notification.Api.Services;
+using SmartLogistics.Shared.Extensions;
 
-// TODO: Kafka consumer (shipment.created), email/SMS providers, OpenTelemetry
+var builder = WebApplication.CreateBuilder(args);
+builder.AddSmartLogisticsSerilog();
+
 builder.Services.AddControllers();
+builder.Services.AddSmartLogisticsAuth(builder.Configuration);
+builder.Services.AddSmartLogisticsHealthChecks();
+builder.Services.AddSmartLogisticsOpenTelemetry(builder.Configuration, "notification-api");
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<NotificationDispatcher>();
+builder.Services.AddHostedService<ShipmentCreatedConsumer>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
 
 var app = builder.Build();
 
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "notification-api" }));
+app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapSmartLogisticsHealthChecks();
 
 app.Run();

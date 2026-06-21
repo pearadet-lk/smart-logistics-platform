@@ -1,0 +1,16 @@
+{
+  "app.title": "แพลตฟอร์ม Smart Logistics",
+  "nav.dashboard": "แดชบอร์ด",
+  "nav.shipments": "การขนส่ง",
+  "nav.tracking": "ติดตามพัสดุ",
+  "nav.tariffs": "อัตราค่าขนส่ง",
+  "nav.approval": "อนุมัติอัตรา",
+  "nav.admin": "ผู้ดูแลระบบ",
+  "nav.audit": "ประวัติการแก้ไข",
+  "nav.assistant": "ผู้ช่วย AI",
+  "actions.login": "เข้าสู่ระบบ",
+  "actions.logout": "ออกจากระบบ",
+  "actions.darkMode": "โหมดมืด",
+  "actions.lightMode": "โหมดสว่าง",
+  "notifications.title": "การแจ้งเตือน"
+}

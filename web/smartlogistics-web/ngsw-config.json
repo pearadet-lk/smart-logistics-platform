@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": ["/favicon.ico", "/index.html", "/manifest.webmanifest", "/*.css", "/*.js"]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/i18n/**", "/silent-check-sso.html"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "lookup-cache",
+      "urls": ["/api/tariffs/currency-rates/**"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxSize": 20,
+        "maxAge": "1d",
+        "timeout": "5s"
+      }
+    }
+  ]
+}

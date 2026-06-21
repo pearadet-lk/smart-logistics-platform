@@ -1,1 +1,31 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, system-ui, sans-serif;
+}
+
+body.dark-theme {
+  background: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-theme .ag-theme-quartz {
+  --ag-background-color: #1e1e1e;
+  --ag-foreground-color: #e0e0e0;
+}

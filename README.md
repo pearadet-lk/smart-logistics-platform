@@ -2,7 +2,9 @@
 
 Cloud-native logistics platform demonstrating OIDC/OAuth2, microservices, event-driven architecture, and Kubernetes deployment patterns.
 
-> **Status:** Placeholder scaffold — business logic, persistence, and integrations are TODO.
+> **Status:** Enterprise portfolio — Phases 1–5+ implemented: Keycloak OIDC, EF migrations, workflow, audit, AI assistant, Elasticsearch, Module Federation shell, K8s HPA.
+
+See [docs/PORTFOLIO_FEATURES.md](docs/PORTFOLIO_FEATURES.md) for full feature matrix.
 
 ## Business domain
 
@@ -31,6 +33,8 @@ Internet → Ingress/WAF → API Gateway (YARP) → Microservices (.NET)
 | `/api/tariffs` | Tariff API |
 | `/api/invoices` | Billing API |
 | `/api/notifications` | Notification API |
+| `/api/audit` | Shipment API (admin) |
+| `/api/ai` | AI Assistant API |
 
 ## Repository structure
 
@@ -42,9 +46,11 @@ smart-logistics-platform/
 │   │   ├── Shipment/SmartLogistics.Shipment.Api/  # ShipmentDB
 │   │   ├── Tariff/SmartLogistics.Tariff.Api/      # TariffDB
 │   │   ├── Billing/SmartLogistics.Billing.Api/    # BillingDB
-│   │   └── Notification/SmartLogistics.Notification.Api/
-│   └── Shared/SmartLogistics.Shared/              # Audit, events, role constants
-├── web/smartlogistics-web/                        # Angular 22 SPA (Keycloak PKCE TODO)
+│   │   ├── Notification/SmartLogistics.Notification.Api/
+│   │   └── Ai/SmartLogistics.Ai.Api/              # Azure OpenAI / mock assistant
+│   └── Shared/SmartLogistics.Shared/              # Audit, events, workflow, auth
+├── web/smartlogistics-web/                        # Angular 22 shell (Module Federation host)
+├── web/remotes/                                   # Federated micro-frontends (optional)
 ├── docker/                                        # docker-compose, Dockerfiles
 ├── scripts/                                       # docker-deploy, minikube-deploy (+ auto port-forward)
 ├── infrastructure/
@@ -93,29 +99,44 @@ Carriers  → Maersk, ONE
 
 ### Option A — Docker full stack (recommended)
 
-Builds and runs infrastructure + all APIs + gateway in Docker:
+One command from the repository root — infrastructure, all APIs, gateway, and Angular web:
+
+```powershell
+docker compose up --build -d
+```
+
+Or use the helper script:
 
 ```powershell
 ./scripts/docker-deploy.ps1
 ```
 
-Or manually:
-
-```powershell
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.local.yml up --build -d
-```
-
 | Endpoint | URL |
 |----------|-----|
+| **Web UI (Angular)** | http://localhost:4200 |
 | Gateway | http://localhost:5000/health |
 | Keycloak | http://localhost:8080 (admin / admin) |
+| Jaeger (tracing) | http://localhost:16686 |
+| Seq (logs) | http://localhost:8081 |
+| Kibana | http://localhost:5601 |
+| **Grafana** | http://localhost:3000 (admin / admin) |
+| Elasticsearch | http://localhost:9200 |
 | PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
 | Kafka | localhost:9092 |
 
 Stop the stack:
 
 ```powershell
+docker compose down
+# or
 ./scripts/docker-teardown.ps1
+```
+
+Infrastructure only (no .NET / web builds):
+
+```powershell
+docker compose -f docker/docker-compose.yml up -d
 ```
 
 ### Option B — Minikube with automatic port-forward
@@ -180,13 +201,19 @@ curl http://localhost:5101/health
 
 ### Frontend (Angular 22)
 
+Included in the Docker full stack at http://localhost:4200.
+
+For local development without Docker:
+
 ```powershell
 cd web/smartlogistics-web
 npm install
 npm start
 ```
 
-Open http://localhost:4200 — placeholder home page with gateway and Keycloak config.
+Open http://localhost:4200 — Keycloak login, dashboard charts, AG Grid, Leaflet map, SignalR notifications, EN/TH i18n, dark mode.
+
+Full feature matrix: [docs/PORTFOLIO_FEATURES.md](docs/PORTFOLIO_FEATURES.md)
 
 ## Security
 

@@ -1,4 +1,3 @@
-/** Local development defaults — Keycloak PKCE integration TODO */
 export const environment = {
   production: false,
   appName: 'Smart Logistics Platform',

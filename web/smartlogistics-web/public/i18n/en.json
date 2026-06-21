@@ -1,0 +1,16 @@
+{
+  "app.title": "Smart Logistics Platform",
+  "nav.dashboard": "Dashboard",
+  "nav.shipments": "Shipments",
+  "nav.tracking": "Tracking",
+  "nav.tariffs": "Tariffs",
+  "nav.approval": "Tariff Approval",
+  "nav.admin": "Admin",
+  "nav.audit": "Audit Log",
+  "nav.assistant": "AI Assistant",
+  "actions.login": "Login",
+  "actions.logout": "Logout",
+  "actions.darkMode": "Dark mode",
+  "actions.lightMode": "Light mode",
+  "notifications.title": "Notifications"
+}

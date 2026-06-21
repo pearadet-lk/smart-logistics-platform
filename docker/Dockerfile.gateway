@@ -1,7 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+COPY ["src/Shared/SmartLogistics.Shared/SmartLogistics.Shared.csproj", "Shared/SmartLogistics.Shared/"]
 COPY ["src/Gateway/SmartLogistics.Gateway/SmartLogistics.Gateway.csproj", "Gateway/SmartLogistics.Gateway/"]
 RUN dotnet restore "Gateway/SmartLogistics.Gateway/SmartLogistics.Gateway.csproj"
+COPY src/Shared/SmartLogistics.Shared/ Shared/SmartLogistics.Shared/
 COPY src/Gateway/SmartLogistics.Gateway/ Gateway/SmartLogistics.Gateway/
 WORKDIR /src/Gateway/SmartLogistics.Gateway
 RUN dotnet publish -c Release -o /app/publish --no-restore

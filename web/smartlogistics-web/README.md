@@ -4,9 +4,12 @@ Angular **22** SPA for the Smart Logistics Platform.
 
 ## Stack
 
-- Angular 22 (standalone components)
-- Keycloak client: `smartlogistics-web` (Authorization Code + PKCE — TODO)
-- API Gateway: `http://localhost:5000`
+- Angular 22 (standalone components, Angular Material)
+- Keycloak OIDC via `keycloak-js` (PKCE + silent token refresh)
+- Dynamic role/permission-based navigation
+- API Gateway: `http://localhost:5000` (Bearer token via HTTP interceptor)
+
+> Note: `keycloak-angular` does not yet support Angular 22 — we use `keycloak-js` directly (enterprise pattern).
 
 ## Development
 

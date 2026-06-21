@@ -1,30 +1,36 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Threading.RateLimiting;
+using SmartLogistics.Shared.Extensions;
+using SmartLogistics.Shared.Features;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddSmartLogisticsSerilog();
 
-// TODO: Wire OpenTelemetry → Prometheus → Grafana
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-var keycloakAuthority = builder.Configuration["Keycloak:Authority"]
-    ?? throw new InvalidOperationException("Keycloak:Authority is required.");
+builder.Services.AddSmartLogisticsAuth(builder.Configuration);
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = keycloakAuthority;
-        options.Audience = builder.Configuration["Keycloak:Audience"];
-        options.RequireHttpsMetadata = false; // Local dev only — enable in production
-    });
+builder.Services.Configure<FeatureFlags>(builder.Configuration.GetSection("FeatureFlags"));
 
-builder.Services.AddAuthorization(options =>
+builder.Services.AddRateLimiter(options =>
 {
-    options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("customer", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 100, Window = TimeSpan.FromMinutes(1) }));
+    options.AddPolicy("partner", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.User.Identity?.Name ?? "partner",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 1000, Window = TimeSpan.FromMinutes(1) }));
 });
 
-// TODO: Rate limiting, structured logging, correlation ID middleware
+builder.Services.AddSmartLogisticsHealthChecks();
+builder.Services.AddSmartLogisticsOpenTelemetry(builder.Configuration, "gateway");
+
 var app = builder.Build();
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -37,7 +43,10 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "gateway" }));
-app.MapReverseProxy();
+app.MapSmartLogisticsHealthChecks();
+app.MapGet("/api/feature-flags", (Microsoft.Extensions.Options.IOptions<FeatureFlags> flags) =>
+    Results.Ok(flags.Value));
+
+app.MapReverseProxy().RequireRateLimiting("customer");
 
 app.Run();
